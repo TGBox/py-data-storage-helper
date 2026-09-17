@@ -1,7 +1,7 @@
 [project]
 name = "py-data-storage-helper"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "A python program to index, analyse, visualize, sort, modify and plan the storage of files on your hard drives."
 readme = "README.md"
 authors = [
     { name = "Daniel Rösch", email = "droesch91@gmail.com" }
@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 py-data-storage-helper = "py_data_storage_helper:main"
+main = "py_data_storage_helper:main"
 
 [build-system]
 requires = ["uv_build>=0.12.6,<0.13.0"]

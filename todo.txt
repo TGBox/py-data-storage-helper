@@ -1,0 +1,1 @@
+2026-09-17 (A) Die Buttons an den Laufwerken mit der Aufschrift "Auswerten" triggern das Auswerfen der Platten, ohne nochmal die Bestätigung des Nutzers zu erfragen! +CriticalBug @code

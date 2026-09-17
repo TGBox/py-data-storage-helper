@@ -7,7 +7,9 @@ authors = [
     { name = "Daniel Rösch", email = "droesch91@gmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "pyside6>=6.11.2",
+]
 
 [project.scripts]
 py-data-storage-helper = "py_data_storage_helper:main"

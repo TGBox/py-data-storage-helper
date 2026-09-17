@@ -83,6 +83,18 @@ class DatabaseManager:
             conn.commit()
 
     def upsert_volume(self, vol_data: Dict[str, Any]) -> None:
+        data = {
+            "id": vol_data.get("id"),
+            "label": vol_data.get("label", ""),
+            "letter": vol_data.get("letter", ""),
+            "total_space": vol_data.get("total_space", 0),
+            "free_space": vol_data.get("free_space", 0),
+            "file_system": vol_data.get("file_system", ""),
+            "is_ssd": vol_data.get("is_ssd", 0),
+            "drive_type": vol_data.get("drive_type", "Fixed Disk"),
+            "smart_status": vol_data.get("smart_status", "OK"),
+            "last_indexed": vol_data.get("last_indexed", None),
+        }
         with self.get_connection() as conn:
             conn.execute("""
                 INSERT INTO volumes (id, label, letter, total_space, free_space, file_system, is_ssd, drive_type, smart_status, last_indexed)
@@ -96,8 +108,8 @@ class DatabaseManager:
                     is_ssd=excluded.is_ssd,
                     drive_type=excluded.drive_type,
                     smart_status=excluded.smart_status,
-                    last_indexed=excluded.last_indexed;
-            """, vol_data)
+                    last_indexed=COALESCE(excluded.last_indexed, volumes.last_indexed);
+            """, data)
             conn.commit()
 
     def get_volumes(self) -> List[Dict[str, Any]]:

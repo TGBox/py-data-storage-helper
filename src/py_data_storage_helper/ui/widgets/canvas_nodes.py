@@ -1,3 +1,4 @@
+from PySide6.QtWidgets import QGraphicsItem
 from typing import List, Dict, Any
 from PySide6.QtCore import Qt, QPointF, QRectF, Signal
 from PySide6.QtWidgets import (

@@ -1,3 +1,4 @@
+from PySide6.QtGui import QColor
 import os
 import shutil
 from typing import Optional

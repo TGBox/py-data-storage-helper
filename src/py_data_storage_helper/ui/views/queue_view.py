@@ -1,3 +1,7 @@
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QFrame
+from PySide6.QtWidgets import QSpinBox
+from PySide6.QtWidgets import QGroupBox
 from typing import Optional
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (

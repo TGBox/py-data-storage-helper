@@ -1,3 +1,7 @@
+from PySide6.QtWidgets import QDialog
+from datetime import datetime
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QHeaderView
 import os
 from typing import List, Dict, Any, Optional
 from PySide6.QtCore import Qt, Slot

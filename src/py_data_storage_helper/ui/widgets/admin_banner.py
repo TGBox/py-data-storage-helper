@@ -1,3 +1,6 @@
+from typing import Optional
+from PySide6.QtWidgets import QVBoxLayout
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Signal
 
@@ -13,7 +16,6 @@ class AdminBanner(QFrame):
         self.status_text = QLabel()
         self.action_btn = QPushButton("Plan sichern & als Admin neustarten")
         self.action_btn.clicked.connect(self.sig_request_elevation.emit)
-        self.action_btn.setCursor(Qt.PointingHandCursor)
 
         layout.addWidget(self.status_icon)
         layout.addWidget(self.status_text, 1)

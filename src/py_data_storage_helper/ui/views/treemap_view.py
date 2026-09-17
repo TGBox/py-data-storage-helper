@@ -1,3 +1,7 @@
+from platform import platform
+from PySide6.QtWidgets import QGroupBox
+from PySide6.QtWidgets import QFrame
+from PySide6.QtWidgets import QLineEdit
 import os
 from typing import List, Dict, Any, Optional
 from PySide6.QtCore import Qt, Slot, Signal

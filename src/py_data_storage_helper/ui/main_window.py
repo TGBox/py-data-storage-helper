@@ -1,3 +1,4 @@
+from platform import platform
 import os
 import sys
 import ctypes

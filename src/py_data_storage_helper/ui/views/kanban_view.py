@@ -1,3 +1,7 @@
+from PySide6.QtWidgets import QScrollArea
+from typing import Any
+from PySide6.QtWidgets import QVBoxLayout
+from ast import Dict
 from typing import Optional
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QHBoxLayout

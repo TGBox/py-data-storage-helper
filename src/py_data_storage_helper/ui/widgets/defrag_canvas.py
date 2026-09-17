@@ -1,3 +1,5 @@
+from PySide6.QtCore import QRectF
+from PySide6.QtCore import QTimer
 import math
 from typing import List, Dict, Any, Optional
 from PySide6.QtCore import Qt

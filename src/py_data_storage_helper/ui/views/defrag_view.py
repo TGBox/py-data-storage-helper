@@ -1,3 +1,6 @@
+from PySide6.QtWidgets import QTextEdit
+from PySide6.QtWidgets import QProgressBar
+from PySide6.QtWidgets import QGroupBox
 from typing import Optional
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import (

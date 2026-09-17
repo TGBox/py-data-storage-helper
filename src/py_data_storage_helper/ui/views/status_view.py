@@ -1,3 +1,7 @@
+import sys
+from PySide6.QtWidgets import QTextEdit
+from PySide6.QtWidgets import QGroupBox
+import os
 import platform
 from typing import Optional
 from PySide6.QtCore import Qt

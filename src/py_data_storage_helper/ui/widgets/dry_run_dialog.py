@@ -1,3 +1,8 @@
+from datetime import datetime
+from PySide6.QtWidgets import QTableWidgetItem
+from PySide6.QtWidgets import QTableWidget
+from PySide6.QtWidgets import QCheckBox
+from PySide6.QtWidgets import QFrame
 from typing import List, Dict, Any
 from PySide6.QtWidgets import (
     QDialog, QWidget, QVBoxLayout, QHBoxLayout, QLabel,

@@ -16,6 +16,9 @@ class SquarifiedTreemapEngine:
             return []
 
         valid_items = [dict(item) for item in items if item.get("size", 0) > 0]
+        if not valid_items:
+            return []
+
         valid_items.sort(key=lambda x: x["size"], reverse=True)
         total_size = sum(x["size"] for x in valid_items)
         if total_size <= 0:
@@ -26,25 +29,58 @@ class SquarifiedTreemapEngine:
             item["area"] = (item["size"] / total_size) * total_area
 
         results: List[Dict[str, Any]] = []
-        cls._squarify(valid_items, [], bounds, results)
+        cls._squarify(valid_items, bounds, results)
         return results
 
     @classmethod
-    def _squarify(cls, children: List[Dict[str, Any]], current_row: List[Dict[str, Any]],
-                   rect: QRectF, results: List[Dict[str, Any]]) -> None:
-        if not children:
-            if current_row:
-                cls._layout_row(current_row, rect, results)
-            return
-
-        c = children[0]
-        row_with_c = current_row + [c]
-
-        if not current_row or cls._worst_ratio(current_row, rect) >= cls._worst_ratio(row_with_c, rect):
-            cls._squarify(children[1:], row_with_c, rect, results)
+    def _squarify(cls, children: List[Dict[str, Any]], *args) -> None:
+        """
+        Iterative squarified treemap layout to prevent recursion depth exhaustion.
+        Supports both _squarify(children, rect, results) and legacy _squarify(children, current_row, rect, results).
+        """
+        if len(args) == 2:
+            rect, results = args
+        elif len(args) == 3:
+            _, rect, results = args
         else:
-            remaining_rect = cls._layout_row(current_row, rect, results)
-            cls._squarify(children, [], remaining_rect, results)
+            raise TypeError("Invalid arguments to _squarify")
+
+        current_row: List[Dict[str, Any]] = []
+        current_worst = float('inf')
+        i = 0
+        n = len(children)
+
+        while i < n:
+            side = min(rect.width(), rect.height())
+            if side <= 0.0001:
+                break
+
+            c = children[i]
+            if c.get("area", 0) <= 0:
+                c["rect"] = QRectF(rect.x(), rect.y(), 0.0, 0.0)
+                results.append(c)
+                i += 1
+                continue
+
+            row_with_c = current_row + [c]
+            new_worst = cls._worst_ratio(row_with_c, rect)
+
+            if not current_row or current_worst >= new_worst:
+                current_row.append(c)
+                current_worst = new_worst
+                i += 1
+            else:
+                rect = cls._layout_row(current_row, rect, results)
+                current_row = []
+                current_worst = float('inf')
+
+        if current_row:
+            cls._layout_row(current_row, rect, results)
+
+        while i < n:
+            children[i]["rect"] = QRectF(rect.x(), rect.y(), 0.0, 0.0)
+            results.append(children[i])
+            i += 1
 
     @classmethod
     def _worst_ratio(cls, row: List[Dict[str, Any]], rect: QRectF) -> float:
@@ -58,8 +94,10 @@ class SquarifiedTreemapEngine:
         side_sq = side * side
         max_a = max(item["area"] for item in row)
         min_a = min(item["area"] for item in row)
+        if min_a <= 0:
+            return float('inf')
         ratio1 = (side_sq * max_a) / (row_area * row_area)
-        ratio2 = (row_area * row_area) / (side_sq * min_a) if min_a > 0 else float('inf')
+        ratio2 = (row_area * row_area) / (side_sq * min_a)
         return max(ratio1, ratio2)
 
     @classmethod
@@ -155,6 +193,11 @@ class TreemapCanvasWidget(QWidget):
 
             cat = item.get("category", "other")
             base_color = self.CATEGORY_COLORS.get(cat, QColor("#64748b"))
+
+            if r.width() < 4 or r.height() < 4:
+                painter.fillRect(r, base_color)
+                continue
+
             grad = QLinearGradient(r.topLeft(), r.bottomRight())
 
             if item == self.selected_tile:

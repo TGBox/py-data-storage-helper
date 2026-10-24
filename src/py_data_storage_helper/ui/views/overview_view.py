@@ -155,7 +155,7 @@ class DriveOverviewView(QWidget):
         self.active_worker.sig_error.connect(self.on_indexer_error)
         self.active_worker.start()
 
-    @Slot(int, int, str)
+    @Slot(int, 'qint64', str)
     def on_indexer_progress(self, file_count: int, total_size: int, current_path: str) -> None:
         self.lbl_prog_status.setText(f"Gefunden: {file_count:,} Dateien ({format_bytes(total_size)}) | {current_path[:75]}")
 

@@ -13,7 +13,7 @@ from ..core.utils import to_long_path, format_bytes
 class DuplicateFinderWorker(QThread):
     sig_progress = Signal(str, int, int)
     sig_duplicate_group = Signal(dict)
-    sig_finished = Signal(list, int)
+    sig_finished = Signal(list, 'qint64')
     sig_error = Signal(str)
 
     def __init__(self, db: DatabaseManager, mode: str = "EXACT", volume_id: Optional[str] = None,

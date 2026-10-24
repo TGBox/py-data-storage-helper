@@ -225,7 +225,7 @@ class TransferQueueView(QWidget):
             self.worker.cancel()
             self.btn_cancel.setEnabled(False)
 
-    @Slot(int, int, int, int, float, str)
+    @Slot(int, int, 'qint64', 'qint64', float, str)
     def on_overall_progress(self, cur_ops: int, total_ops: int, cur_bytes: int, total_bytes: int, speed: float, eta: str) -> None:
         pct = int((cur_bytes / max(1, total_bytes)) * 100)
         self.bar_overall.setValue(pct)

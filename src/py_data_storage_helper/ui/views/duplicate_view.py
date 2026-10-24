@@ -177,7 +177,7 @@ class DuplicateFinderView(QWidget):
             child.setText(4, abs_p)
             child.setData(0, Qt.UserRole, f)
 
-    @Slot(list, int)
+    @Slot(list, 'qint64')
     def on_scan_finished(self, groups: list, wasted_bytes: int) -> None:
         self.btn_scan.setEnabled(True)
         self.btn_cancel.setEnabled(False)

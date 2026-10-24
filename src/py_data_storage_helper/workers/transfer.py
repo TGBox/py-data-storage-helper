@@ -14,8 +14,8 @@ from ..core.plan import StoragePlan
 
 
 class SingleFileTransferWorker(QThread):
-    sig_file_progress = Signal(str, str, int, int, float)
-    sig_file_completed = Signal(str, str, str, int, str)
+    sig_file_progress = Signal(str, str, 'qint64', 'qint64', float)
+    sig_file_completed = Signal(str, str, str, 'qint64', str)
 
     def __init__(self, op: Dict[str, Any], conflict_strategy: str = "VERSION", verify_checksum: bool = True, preserve_timestamps: bool = True):
         super().__init__()
@@ -111,10 +111,11 @@ class SingleFileTransferWorker(QThread):
 
 
 class SpindleAwareTransferCoordinator(QThread):
-    sig_overall_progress = Signal(int, int, int, int, float, str)
+    sig_overall_progress = Signal(int, int, 'qint64', 'qint64', float, str)
     sig_active_streams = Signal(list)
     sig_spindle_telemetry = Signal(dict)
     sig_item_completed = Signal(str, str, str)
+    sig_file_progress = Signal(str, 'qint64', 'qint64')
     sig_log = Signal(str)
     sig_finished = Signal(dict)
 

@@ -9,7 +9,7 @@ from ..core.drive_detector import DriveDetector
 
 
 class IndexerWorker(QThread):
-    sig_progress = Signal(int, int, str)
+    sig_progress = Signal(int, 'qint64', str)
     sig_batch_ready = Signal(list)
     sig_finished = Signal(dict)
     sig_error = Signal(str)

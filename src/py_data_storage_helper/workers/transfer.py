@@ -7,7 +7,7 @@ import shutil
 from typing import Dict, List, Optional, Any
 from PySide6.QtCore import QThread, Signal
 
-from ..core.utils import to_long_path
+from ..core.utils import to_long_path, volume_root
 from ..core.windows import WindowsPowerManager, PhysicalDiskResolver
 from ..core.database import DatabaseManager
 from ..core.plan import StoragePlan
@@ -35,8 +35,8 @@ class SingleFileTransferWorker(QThread):
         tgt_vol = self.op.get("target_volume", "D:")
         tgt_rel = self.op.get("target_path", "")
 
-        src_full = os.path.join(src_vol, src_rel)
-        tgt_full = os.path.join(tgt_vol, tgt_rel)
+        src_full = os.path.join(volume_root(src_vol), src_rel)
+        tgt_full = os.path.join(volume_root(tgt_vol), tgt_rel)
         fname = os.path.basename(src_full)
 
         long_src = to_long_path(src_full)

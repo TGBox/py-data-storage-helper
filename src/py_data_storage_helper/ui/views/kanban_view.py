@@ -63,12 +63,16 @@ class PlanningKanbanView(QWidget):
     def on_cluster_assigned(self, cluster: Dict[str, Any], target_drive_id: Optional[str]) -> None:
         if not target_drive_id:
             return
-        vol = next((v for v in self.db.get_volumes() if v["id"] == target_drive_id), None)
-        target_letter = vol["letter"] if vol else "D:\\"
+        volumes = self.db.get_volumes()
+        vol = next((v for v in volumes if v["id"] == target_drive_id), None)
+        src = next((v for v in volumes if v["id"] == cluster.get("volume_id")), None)
+        if not vol or not src or vol["id"] == src["id"]:
+            return  # unbekanntes Laufwerk oder Quelle = Ziel
+        target_letter = vol["letter"]
 
         self.plan.add_operation(
             op_type="MOVE",
-            src_vol=cluster.get("volume_id", "C:"),
+            src_vol=src["letter"],
             src_path=cluster.get("name", "cluster"),
             tgt_vol=target_letter,
             tgt_path=f"Konsolidierung/{cluster.get('name')}",

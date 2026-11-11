@@ -12,8 +12,9 @@ from PySide6.QtWidgets import (
 )
 
 from ...core.utils import to_long_path, format_bytes
-from ...core.windows import send_to_recycle_bin
+from ...core.windows import send_to_recycle_bin, drive_has_recycle_bin
 from ...core.database import DatabaseManager
+from ...core.drive_detector import DriveDetector
 from ...workers.duplicate_worker import DuplicateFinderWorker
 from ..widgets.dry_run_dialog import DryRunSimulationDialog
 
@@ -257,31 +258,74 @@ class DuplicateFinderView(QWidget):
             return
 
         dialog = DryRunSimulationDialog(self, selected_files, total_reclaimable)
-        if dialog.exec() == QDialog.Accepted:
-            use_recycle = dialog.chk_recycle.isChecked()
-            deleted_count = 0
-            fail_count = 0
-            for f in selected_files:
-                target_path = f["abs_path"]
-                success = False
-                if use_recycle:
-                    success, _ = send_to_recycle_bin(target_path)
+        if dialog.exec() != QDialog.Accepted:
+            return
+
+        use_recycle = dialog.chk_recycle.isChecked()
+        skipped_count = 0
+        permanent_paths = set()
+
+        if use_recycle:
+            # Auf Laufwerken ohne Papierkorb würde Windows stillschweigend endgültig löschen.
+            no_bin = [f for f in selected_files if not drive_has_recycle_bin(f["abs_path"])]
+            if no_bin:
+                drives = sorted({os.path.splitdrive(f["abs_path"])[0] or f["abs_path"] for f in no_bin})
+                no_bin_bytes = sum(f.get("size", 0) for f in no_bin)
+                box = QMessageBox(self)
+                box.setIcon(QMessageBox.Warning)
+                box.setWindowTitle("Kein Papierkorb verfügbar")
+                box.setText(
+                    f"{len(no_bin)} von {len(selected_files)} Dateien ({format_bytes(no_bin_bytes)}) liegen auf "
+                    f"Laufwerken ohne Papierkorb: {', '.join(drives)}.\n\n"
+                    "Diese Dateien können nur endgültig gelöscht werden."
+                )
+                btn_delete = box.addButton("Endgültig löschen", QMessageBox.DestructiveRole)
+                btn_skip = box.addButton("Diese Dateien überspringen", QMessageBox.AcceptRole)
+                box.addButton("Abbrechen", QMessageBox.RejectRole)
+                box.setDefaultButton(btn_skip)
+                box.exec()
+                clicked = box.clickedButton()
+                no_bin_paths = {f["abs_path"] for f in no_bin}
+                if clicked == btn_delete:
+                    permanent_paths = no_bin_paths
+                elif clicked == btn_skip:
+                    skipped_count = len(no_bin)
+                    selected_files = [f for f in selected_files if f["abs_path"] not in no_bin_paths]
                 else:
-                    try:
-                        os.remove(to_long_path(target_path))
-                        success = True
-                    except Exception:
-                        success = False
+                    return
 
-                if success:
-                    deleted_count += 1
-                    self.db.log_operation("DELETE", target_path, size=f.get("size", 0))
-                else:
-                    fail_count += 1
+        # Zwischen Scan und Bereinigung kann sich die Laufwerkszuordnung geändert haben.
+        mounted = {d["id"]: d["letter"] for d in DriveDetector.get_mounted_drives()}
+        deleted_count = 0
+        fail_count = 0
+        freed_bytes = 0
+        for f in selected_files:
+            target_path = f["abs_path"]
+            letter = mounted.get(f.get("volume_id"))
+            if not letter or not target_path.upper().startswith(letter.upper()):
+                fail_count += 1
+                continue
 
-            QMessageBox.information(
-                self, "Bereinigung fertig",
-                f"Ergebnis:\nErfolgreich entfernt: {deleted_count}\nFehlgeschlagen: {fail_count}\nFreigabe: {format_bytes(total_reclaimable)}"
-            )
-            self.start_scan()
+            success = False
+            if use_recycle and target_path not in permanent_paths:
+                success, _ = send_to_recycle_bin(target_path)
+            else:
+                try:
+                    os.remove(to_long_path(target_path))
+                    success = True
+                except Exception:
+                    success = False
 
+            if success:
+                deleted_count += 1
+                freed_bytes += f.get("size", 0)
+                self.db.log_operation("DELETE", target_path, size=f.get("size", 0))
+            else:
+                fail_count += 1
+
+        QMessageBox.information(
+            self, "Bereinigung fertig",
+            f"Ergebnis:\nErfolgreich entfernt: {deleted_count}\nÜbersprungen (kein Papierkorb): {skipped_count}\n"
+            f"Fehlgeschlagen: {fail_count}\nFreigabe: {format_bytes(freed_bytes)}"
+        )
+        self.start_scan()

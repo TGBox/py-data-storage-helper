@@ -70,7 +70,8 @@ class PlanManagerView(QWidget):
         self.refresh_table()
 
     def set_plan(self, plan: StoragePlan) -> None:
-        self.current_plan = plan
+        # In-place, damit Queue, Treemap und Kanban denselben Plan sehen.
+        self.current_plan.replace_with(plan)
         self.refresh_table()
 
     def clear_plan(self) -> None:

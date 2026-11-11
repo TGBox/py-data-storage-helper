@@ -14,6 +14,13 @@ def to_long_path(path_str: str) -> str:
     return "\\\\?\\" + clean_path
 
 
+def volume_root(vol: str) -> str:
+    """Macht aus 'C:' ein 'C:\\', damit os.path.join keinen laufwerksrelativen Pfad erzeugt."""
+    if len(vol) == 2 and vol[1] == ":" and vol[0].isalpha():
+        return vol + "\\"
+    return vol
+
+
 def strip_long_path_prefix(path_str: str) -> str:
     if path_str.startswith("\\\\?\\UNC\\"):
         return "\\\\" + path_str[8:]

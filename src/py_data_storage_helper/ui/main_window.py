@@ -225,8 +225,8 @@ class MainWindow(QMainWindow):
     def load_resume_plan(self, path: str) -> None:
         plan = StoragePlan.load_from_file(path)
         if plan:
-            self.shared_plan = plan
-            self.view_plan.set_plan(plan)
+            self.shared_plan.replace_with(plan)
+            self.view_plan.refresh_table()
             self.view_queue.refresh_table()
             self.switch_nav(7)
 

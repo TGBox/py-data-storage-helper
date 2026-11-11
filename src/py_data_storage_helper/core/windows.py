@@ -15,6 +15,8 @@ from ..constants import (
     FOF_NOCONFIRMATION,
     FOF_SILENT,
     FOF_NOERRORUI,
+    FOF_WANTNUKEWARNING,
+    DRIVE_FIXED,
 )
 from .utils import to_long_path, strip_long_path_prefix
 
@@ -113,6 +115,20 @@ def is_running_as_admin() -> bool:
 
 
 
+def drive_has_recycle_bin(path_str: str) -> bool:
+    """Windows führt nur für Laufwerke vom Typ 'Fixed' einen Papierkorb, nicht für Wechselmedien und Netzlaufwerke."""
+    if platform.system() != "Windows":
+        return False
+    try:
+        drive = os.path.splitdrive(os.path.abspath(strip_long_path_prefix(path_str)))[0]
+        if not drive:
+            return False
+        return ctypes.windll.kernel32.GetDriveTypeW(drive + "\\") == DRIVE_FIXED
+    except Exception:
+        return False
+
+
+
 def send_to_recycle_bin(path_str: str) -> Tuple[bool, str]:
     long_path = to_long_path(path_str)
     if platform.system() != "Windows":
@@ -130,7 +146,8 @@ def send_to_recycle_bin(path_str: str) -> Tuple[bool, str]:
         fileop.wFunc = FO_DELETE
         fileop.pFrom = p_from
         fileop.pTo = None
-        fileop.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI
+        # FOF_WANTNUKEWARNING: Windows fragt nach, falls eine Datei doch nicht in den Papierkorb passt.
+        fileop.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI | FOF_WANTNUKEWARNING
 
         ret = ctypes.windll.shell32.SHFileOperationW(ctypes.byref(fileop))
         if ret == 0 and not fileop.fAnyOperationsAborted:

@@ -25,6 +25,14 @@ class StoragePlan:
             "checksum": None
         })
 
+    def replace_with(self, other: 'StoragePlan') -> None:
+        """Übernimmt den Inhalt eines anderen Plans, ohne das Objekt auszutauschen (alle Views teilen sich dieses Objekt)."""
+        self.plan_version = other.plan_version
+        self.created_at = other.created_at
+        self.name = other.name
+        self.operations[:] = list(other.operations)
+        self.batch_rules[:] = list(other.batch_rules)
+
     def to_json(self) -> str:
         data = {
             "plan_version": self.plan_version,

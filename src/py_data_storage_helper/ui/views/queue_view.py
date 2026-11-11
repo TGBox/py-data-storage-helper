@@ -171,7 +171,7 @@ class TransferQueueView(QWidget):
         for idx, op in enumerate(ops):
             self.table.setItem(idx, 0, QTableWidgetItem(op.get("op_id", "")))
             self.table.setItem(idx, 1, QTableWidgetItem(op.get("type", "MOVE")))
-            self.table.setItem(idx, 2, QTableWidgetItem(f"{op.get('source_volume', '')} -> {op.get('source_path', '')}"))
+            self.table.setItem(idx, 2, QTableWidgetItem(f"{op.get('source_volume', '')} -> {op.get('source_path', '') or str(len(op.get('files') or [])) + ' Dateien'}"))
             self.table.setItem(idx, 3, QTableWidgetItem(f"{op.get('target_volume', '')} -> {op.get('target_path', '')}"))
             self.table.setItem(idx, 4, QTableWidgetItem(format_bytes(op.get("size", 0))))
             status_item = QTableWidgetItem(op.get("status", "PENDING"))
@@ -265,6 +265,7 @@ class TransferQueueView(QWidget):
             if self.table.item(row, 0).text() == op_id:
                 item = QTableWidgetItem(status)
                 item.setForeground(QColor("#10b981" if status == "SUCCESS" else ("#f59e0b" if status == "SKIPPED" else "#ef4444")))
+                item.setToolTip(msg)
                 self.table.setItem(row, 5, item)
                 break
 

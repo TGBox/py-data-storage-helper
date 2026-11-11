@@ -70,13 +70,34 @@ class PlanningKanbanView(QWidget):
             return  # unbekanntes Laufwerk oder Quelle = Ziel
         target_letter = vol["letter"]
 
+        group_by = cluster.get("group_by", "category")
+        group_name = cluster.get("group_name")
+        if not group_name:
+            return
+
+        if group_by == "category":
+            # Verstreute Dateien einer Kategorie: Ordnerstruktur bleibt unter Konsolidierung\<Kategorie>\ erhalten.
+            files = self.db.get_cluster_file_paths(src["id"], "category", group_name)
+            src_path, tgt_path = "", f"Konsolidierung\\{group_name}"
+        elif group_name == "[Root Files]":
+            files = self.db.get_cluster_file_paths(src["id"], "folder", group_name)
+            src_path, tgt_path = "", "Konsolidierung"
+        else:
+            # Hauptordner: wird als ganzer Ordner übertragen.
+            files = None
+            src_path, tgt_path = group_name, f"Konsolidierung\\{group_name}"
+
+        if files is not None and not files:
+            return
+
         self.plan.add_operation(
             op_type="MOVE",
             src_vol=src["letter"],
-            src_path=cluster.get("name", "cluster"),
+            src_path=src_path,
             tgt_vol=target_letter,
-            tgt_path=f"Konsolidierung/{cluster.get('name')}",
-            size=cluster.get("total_size", 0)
+            tgt_path=tgt_path,
+            size=cluster.get("total_size", 0),
+            files=files
         )
         if target_drive_id in self.columns:
             self.columns[target_drive_id].add_card(cluster)

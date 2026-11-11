@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple, Any
 
 from ..constants import DB_FILENAME
 from .utils import to_long_path
+from .file_ops import copy_file_verified
 from .drive_detector import DriveDetector
 
 
@@ -184,7 +185,16 @@ class DatabaseManager:
             tgt = row["target_path"]
 
             try:
-                if op_type in ("RENAME", "MOVE"):
+                if op_type == "MOVE":
+                    if not tgt or not os.path.exists(to_long_path(tgt)):
+                        return False, f"Zieldatei '{tgt}' existiert nicht mehr."
+                    if os.path.exists(to_long_path(src)):
+                        return False, f"Am ursprünglichen Ort '{src}' liegt bereits eine Datei."
+                    res = copy_file_verified(tgt, src, conflict_strategy="SKIP", verify=True)
+                    if res.status != "SUCCESS":
+                        return False, f"Zurückkopieren fehlgeschlagen: {res.message}"
+                    os.remove(to_long_path(tgt))
+                elif op_type == "RENAME":
                     if not tgt or not os.path.exists(to_long_path(tgt)):
                         return False, f"Zieldatei '{tgt}' existiert nicht mehr."
                     target_dir = os.path.dirname(src)
@@ -197,6 +207,8 @@ class DatabaseManager:
                     ))
                 elif op_type == "DELETE":
                     return False, "Gelöschte Dateien müssen über den Windows-Papierkorb wiederhergestellt werden."
+                else:
+                    return False, f"Rollback für '{op_type}' wird nicht unterstützt."
 
                 conn.execute("UPDATE operation_history SET reverted = 1 WHERE id = ?", (op_id,))
                 conn.commit()
@@ -212,6 +224,31 @@ class DatabaseManager:
             """, (op_type, source, target, size, checksum))
             conn.commit()
             return cursor.lastrowid
+
+    def log_operations_batch(self, records: List[Tuple]) -> None:
+        """records: (operation_type, source_path, target_path, file_size, checksum)"""
+        if not records:
+            return
+        with self.get_connection() as conn:
+            conn.executemany("""
+                INSERT INTO operation_history (operation_type, source_path, target_path, file_size, checksum)
+                VALUES (?, ?, ?, ?, ?)
+            """, records)
+            conn.commit()
+
+    def get_cluster_file_paths(self, volume_id: str, group_by: str, name: str) -> List[str]:
+        """Relative Pfade aller Dateien eines Clusters: einer Kategorie oder der Dateien direkt im Laufwerks-Root."""
+        with self.get_connection() as conn:
+            if group_by == "category":
+                rows = conn.execute(
+                    "SELECT path FROM files WHERE volume_id = ? AND category = ? ORDER BY path", (volume_id, name)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT path FROM files WHERE volume_id = ? AND INSTR(path, '/') = 0 AND INSTR(path, '\\') = 0 ORDER BY path",
+                    (volume_id,)
+                ).fetchall()
+            return [r["path"] for r in rows]
 
     def get_operation_logs(self, limit: int = 100) -> List[Dict[str, Any]]:
         with self.get_connection() as conn:
@@ -256,6 +293,8 @@ class DatabaseManager:
                 result.append({
                     "cluster_id": f"{volume_id}_{r['group_name']}",
                     "volume_id": volume_id,
+                    "group_by": "category" if group_by == "category" else "folder",
+                    "group_name": r["group_name"],
                     "name": r["group_name"] or "Unbekannt",
                     "file_count": r["file_count"],
                     "total_size": r["total_size"] or 0

@@ -1,5 +1,5 @@
 import json
-from ast import List
+from typing import List
 from PySide6.QtGui import QMouseEvent
 import math
 from typing import Dict, Any

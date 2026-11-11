@@ -7,7 +7,7 @@ from PySide6.QtCore import QThread, Signal
 
 from ..core.database import DatabaseManager
 from ..core.windows import WindowsPowerManager
-from ..core.utils import to_long_path, format_bytes
+from ..core.utils import to_long_path, format_bytes, is_protected_system_path
 
 
 class DuplicateFinderWorker(QThread):
@@ -73,7 +73,12 @@ class DuplicateFinderWorker(QThread):
                     if self._cancelled:
                         break
                     self.sig_progress.emit(f"Sample-Prüfung ({format_bytes(size)})", idx + 1, total_clusters)
-                    file_records = self.db.get_files_by_size(size, self.volume_id)
+                    file_records = [
+                        r for r in self.db.get_files_by_size(size, self.volume_id)
+                        if not is_protected_system_path(r["path"])
+                    ]
+                    if len(file_records) < 2:
+                        continue
 
                     sample_buckets: Dict[str, List[Dict[str, Any]]] = {}
                     for rec in file_records:
@@ -109,7 +114,10 @@ class DuplicateFinderWorker(QThread):
                                 self.sig_duplicate_group.emit(grp)
             else:
                 self.sig_progress.emit("Lade Dateien für Fuzzy-Analyse...", 0, 100)
-                files = self.db.get_all_files_for_fuzzy(self.volume_id, self.category, limit=2500)
+                files = [
+                    f for f in self.db.get_all_files_for_fuzzy(self.volume_id, self.category, limit=2500)
+                    if not is_protected_system_path(f["path"])
+                ]
                 total_f = len(files)
                 visited = set()
 

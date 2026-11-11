@@ -1,4 +1,4 @@
-from platform import platform
+import platform
 from PySide6.QtWidgets import QGroupBox
 from PySide6.QtWidgets import QFrame
 from PySide6.QtWidgets import QLineEdit

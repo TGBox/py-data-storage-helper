@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QDialog
-from datetime import datetime
+import datetime
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QHeaderView
 import os
@@ -157,8 +157,11 @@ class DuplicateFinderView(QWidget):
         files = grp["files"]
         rep_file = files[0]
 
+        is_fuzzy = grp.get("type") == "FUZZY"
         top_item = QTreeWidgetItem(self.tree)
-        top_item.setText(0, f"📁 Gruppe {len(self.duplicate_groups)}: {rep_file['name']} ({len(files)} Kopien)")
+        top_item.setData(0, Qt.UserRole, grp.get("type", "EXACT"))
+        count_lbl = f"{len(files)} ähnliche Namen, Inhalt nicht geprüft" if is_fuzzy else f"{len(files)} Kopien"
+        top_item.setText(0, f"📁 Gruppe {len(self.duplicate_groups)}: {rep_file['name']} ({count_lbl})")
         top_item.setText(1, format_bytes(grp["size"]))
         top_item.setText(2, format_bytes(grp["wasted_bytes"]))
         top_item.setExpanded(True)
@@ -167,10 +170,14 @@ class DuplicateFinderView(QWidget):
         for idx, f in enumerate(files):
             child = QTreeWidgetItem(top_item)
             child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
-            child.setCheckState(0, Qt.Checked if idx > 0 else Qt.Unchecked)
+            # Fuzzy-Treffer sind nur namensähnlich, daher nie automatisch zum Löschen vormerken.
+            child.setCheckState(0, Qt.Checked if (idx > 0 and not is_fuzzy) else Qt.Unchecked)
             child.setText(0, f["name"])
             child.setText(1, format_bytes(f["size"]))
-            child.setText(2, "Duplikat" if idx > 0 else "Original (Behalten)")
+            if is_fuzzy:
+                child.setText(2, "Ähnlicher Name")
+            else:
+                child.setText(2, "Duplikat" if idx > 0 else "Original (Behalten)")
             dt_str = datetime.datetime.fromtimestamp(f.get("mtime", 0)).strftime("%Y-%m-%d %H:%M")
             child.setText(3, dt_str)
             abs_p = f.get("abs_path") or os.path.join(f.get("volume_letter", ""), f.get("path", ""))
@@ -201,6 +208,8 @@ class DuplicateFinderView(QWidget):
                 for c in children:
                     c.setCheckState(0, Qt.Unchecked)
                 continue
+            if group_item.data(0, Qt.UserRole) == "FUZZY":
+                continue  # Smarte Vorauswahl gilt nur für byte-identische Gruppen
             if strategy == "OLDEST":
                 best = min(children, key=lambda c: c.data(0, Qt.UserRole).get("mtime", 0))
             elif strategy == "NEWEST":
@@ -216,20 +225,35 @@ class DuplicateFinderView(QWidget):
         root = self.tree.invisibleRootItem()
         selected_files: List[Dict[str, Any]] = []
         total_reclaimable = 0
+        fully_selected: List[str] = []
 
         for g_idx in range(root.childCount()):
             group_item = root.child(g_idx)
+            checked_in_group = 0
             for c_idx in range(group_item.childCount()):
                 child = group_item.child(c_idx)
                 if child.checkState(0) == Qt.Checked:
+                    checked_in_group += 1
                     f_data = child.data(0, Qt.UserRole)
                     if f_data:
                         f_data["abs_path"] = child.text(4)
                         selected_files.append(f_data)
                         total_reclaimable += f_data.get("size", 0)
+            if group_item.childCount() > 0 and checked_in_group == group_item.childCount():
+                fully_selected.append(group_item.text(0))
 
         if not selected_files:
             QMessageBox.information(self, "Keine Auswahl", "Es wurden keine Duplikate zur Bereinigung markiert.")
+            return
+
+        if fully_selected:
+            shown = "\n".join(fully_selected[:10])
+            more = f"\n… und {len(fully_selected) - 10} weitere" if len(fully_selected) > 10 else ""
+            QMessageBox.warning(
+                self, "Bereinigung blockiert",
+                "In diesen Gruppen sind alle Dateien zum Löschen markiert. "
+                "Pro Gruppe muss mindestens eine Datei erhalten bleiben:\n\n" + shown + more
+            )
             return
 
         dialog = DryRunSimulationDialog(self, selected_files, total_reclaimable)

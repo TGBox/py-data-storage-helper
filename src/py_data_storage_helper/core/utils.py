@@ -37,6 +37,25 @@ def is_junction_or_symlink(path_str: str) -> bool:
     return False
 
 
+# Ordner, in denen nie Duplikate zum Löschen vorgeschlagen werden (oberste Ebene eines Laufwerks).
+PROTECTED_TOP_LEVEL_DIRS = frozenset({
+    "windows", "program files", "program files (x86)", "programdata",
+    "$recycle.bin", "system volume information", "recovery",
+    "$winreagent", "$windows.~bt", "$windows.~ws", "msocache",
+})
+
+
+def is_protected_system_path(rel_path: str) -> bool:
+    """True, wenn der laufwerksrelative Pfad in einem System- oder Programmordner liegt."""
+    parts = [p.lower() for p in rel_path.replace("/", "\\").split("\\") if p]
+    if not parts:
+        return False
+    if parts[0] in PROTECTED_TOP_LEVEL_DIRS:
+        return True
+    # Users\<Name>\AppData
+    return len(parts) >= 3 and parts[0] == "users" and parts[2] == "appdata"
+
+
 def format_bytes(size: float) -> str:
     for unit in ['B', 'KB', 'MB', 'GB', 'TB', 'PB']:
         if abs(size) < 1024.0:

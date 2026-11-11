@@ -7,7 +7,8 @@ from PySide6.QtCore import QThread, Signal
 
 from ..core.database import DatabaseManager
 from ..core.windows import WindowsPowerManager
-from ..core.utils import to_long_path, format_bytes
+from ..core.drive_detector import DriveDetector
+from ..core.utils import to_long_path, format_bytes, is_protected_system_path
 
 
 class DuplicateFinderWorker(QThread):
@@ -65,6 +66,8 @@ class DuplicateFinderWorker(QThread):
         total_wasted_bytes = 0
 
         try:
+            # Buchstaben in der DB können veraltet sein: nur aktuell eingebundene Volumes, mit ihrem jetzigen Buchstaben.
+            mounted = {d["id"]: d["letter"] for d in DriveDetector.get_mounted_drives()}
             if self.mode == "EXACT":
                 size_clusters = self.db.get_size_duplicate_candidates(self.volume_id, self.min_size, self.category)
                 total_clusters = len(size_clusters)
@@ -73,12 +76,18 @@ class DuplicateFinderWorker(QThread):
                     if self._cancelled:
                         break
                     self.sig_progress.emit(f"Sample-Prüfung ({format_bytes(size)})", idx + 1, total_clusters)
-                    file_records = self.db.get_files_by_size(size, self.volume_id)
+                    file_records = [
+                        r for r in self.db.get_files_by_size(size, self.volume_id)
+                        if r["volume_id"] in mounted and not is_protected_system_path(r["path"])
+                    ]
+                    if len(file_records) < 2:
+                        continue
 
                     sample_buckets: Dict[str, List[Dict[str, Any]]] = {}
                     for rec in file_records:
                         if self._cancelled:
                             break
+                        rec["volume_letter"] = mounted[rec["volume_id"]]
                         full_abs = os.path.join(rec["volume_letter"], rec["path"])
                         shash = self.calculate_sample_hash(full_abs)
                         if shash:
@@ -109,7 +118,12 @@ class DuplicateFinderWorker(QThread):
                                 self.sig_duplicate_group.emit(grp)
             else:
                 self.sig_progress.emit("Lade Dateien für Fuzzy-Analyse...", 0, 100)
-                files = self.db.get_all_files_for_fuzzy(self.volume_id, self.category, limit=2500)
+                files = [
+                    f for f in self.db.get_all_files_for_fuzzy(self.volume_id, self.category, limit=2500)
+                    if f["volume_id"] in mounted and not is_protected_system_path(f["path"])
+                ]
+                for f in files:
+                    f["volume_letter"] = mounted[f["volume_id"]]
                 total_f = len(files)
                 visited = set()
 

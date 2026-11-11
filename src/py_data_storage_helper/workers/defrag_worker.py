@@ -1,6 +1,6 @@
 import re
-from datetime import time
-from platform import platform
+import time
+import platform
 from typing import Optional
 import os
 import sys
@@ -33,9 +33,9 @@ class DefragWorker(QThread):
 
     def run(self) -> None:
         WindowsPowerManager.prevent_sleep()
-        flags = "/A" if self.analyze_only else "/U /V"
-        cmd = f"defrag.exe {self.drive_letter} {flags}"
-        self.sig_log_line.emit(f"Führe Windows Defrag aus: {cmd}\n")
+        flags = ["/A"] if self.analyze_only else ["/O", "/U", "/V"]
+        cmd = ["defrag.exe", self.drive_letter] + flags
+        self.sig_log_line.emit(f"Führe Windows Defrag aus: {' '.join(cmd)}\n")
 
         if platform.system() != "Windows":
             for p in range(1, 101, 10):
@@ -53,7 +53,7 @@ class DefragWorker(QThread):
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             self.process = subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                text=True, shell=True, startupinfo=startupinfo
+                text=True, startupinfo=startupinfo, creationflags=subprocess.CREATE_NO_WINDOW
             )
             pct_regex = re.compile(r'(\d{1,3})\s*%')
             while True:

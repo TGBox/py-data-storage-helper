@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QScrollArea
 from typing import Any
 from PySide6.QtWidgets import QVBoxLayout
-from ast import Dict
+from typing import Dict
 from typing import Optional
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QHBoxLayout
@@ -63,16 +63,41 @@ class PlanningKanbanView(QWidget):
     def on_cluster_assigned(self, cluster: Dict[str, Any], target_drive_id: Optional[str]) -> None:
         if not target_drive_id:
             return
-        vol = next((v for v in self.db.get_volumes() if v["id"] == target_drive_id), None)
-        target_letter = vol["letter"] if vol else "D:\\"
+        volumes = self.db.get_volumes()
+        vol = next((v for v in volumes if v["id"] == target_drive_id), None)
+        src = next((v for v in volumes if v["id"] == cluster.get("volume_id")), None)
+        if not vol or not src or vol["id"] == src["id"]:
+            return  # unbekanntes Laufwerk oder Quelle = Ziel
+        target_letter = vol["letter"]
+
+        group_by = cluster.get("group_by", "category")
+        group_name = cluster.get("group_name")
+        if not group_name:
+            return
+
+        if group_by == "category":
+            # Verstreute Dateien einer Kategorie: Ordnerstruktur bleibt unter Konsolidierung\<Kategorie>\ erhalten.
+            files = self.db.get_cluster_file_paths(src["id"], "category", group_name)
+            src_path, tgt_path = "", f"Konsolidierung\\{group_name}"
+        elif group_name == "[Root Files]":
+            files = self.db.get_cluster_file_paths(src["id"], "folder", group_name)
+            src_path, tgt_path = "", "Konsolidierung"
+        else:
+            # Hauptordner: wird als ganzer Ordner übertragen.
+            files = None
+            src_path, tgt_path = group_name, f"Konsolidierung\\{group_name}"
+
+        if files is not None and not files:
+            return
 
         self.plan.add_operation(
             op_type="MOVE",
-            src_vol=cluster.get("volume_id", "C:"),
-            src_path=cluster.get("name", "cluster"),
+            src_vol=src["letter"],
+            src_path=src_path,
             tgt_vol=target_letter,
-            tgt_path=f"Konsolidierung/{cluster.get('name')}",
-            size=cluster.get("total_size", 0)
+            tgt_path=tgt_path,
+            size=cluster.get("total_size", 0),
+            files=files
         )
         if target_drive_id in self.columns:
             self.columns[target_drive_id].add_card(cluster)

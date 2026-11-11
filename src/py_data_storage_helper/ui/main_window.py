@@ -1,4 +1,4 @@
-from platform import platform
+import platform
 import os
 import sys
 import ctypes
@@ -163,9 +163,39 @@ class MainWindow(QMainWindow):
         self.view_visual.refresh_visuals()
 
     def closeEvent(self, event) -> None:
-        if hasattr(self, 'device_watcher') and self.device_watcher.isRunning():
-            self.device_watcher.stop()
-            self.device_watcher.wait(1000)
+        transfer = self.view_queue.worker
+        defrag = self.view_defrag.worker
+        busy = []
+        if transfer and transfer.isRunning():
+            busy.append("ein Transfer")
+        if defrag and defrag.isRunning():
+            busy.append("eine Defragmentierung")
+        if busy:
+            answer = QMessageBox.question(
+                self, "Vorgang läuft",
+                f"Es läuft noch {' und '.join(busy)}. Abbrechen und beenden?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if answer != QMessageBox.Yes:
+                event.ignore()
+                return
+
+        workers = [w for w in (self.view_drives.active_worker, self.view_duplicates.worker, transfer, defrag)
+                   if w and w.isRunning()]
+        for w in workers:
+            w.blockSignals(True)  # keine Abschluss-Dialoge mehr nach dem Schließen
+            w.cancel()
+        watcher = getattr(self, "device_watcher", None)
+        if watcher and watcher.isRunning():
+            watcher.stop()
+            workers.append(watcher)
+
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            for w in workers:
+                w.wait(15000)
+        finally:
+            QApplication.restoreOverrideCursor()
         super().closeEvent(event)
 
     def create_nav_button(self, text: str, index: int) -> QPushButton:
@@ -225,8 +255,8 @@ class MainWindow(QMainWindow):
     def load_resume_plan(self, path: str) -> None:
         plan = StoragePlan.load_from_file(path)
         if plan:
-            self.shared_plan = plan
-            self.view_plan.set_plan(plan)
+            self.shared_plan.replace_with(plan)
+            self.view_plan.refresh_table()
             self.view_queue.refresh_table()
             self.switch_nav(7)
 

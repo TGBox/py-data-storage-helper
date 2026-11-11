@@ -8,6 +8,7 @@ from .utils import (
 from .windows import (
     is_running_as_admin,
     send_to_recycle_bin,
+    drive_has_recycle_bin,
     WindowsPowerManager,
     PhysicalDiskResolver,
 )
@@ -25,6 +26,7 @@ __all__ = [
     "categorize_extension",
     "is_running_as_admin",
     "send_to_recycle_bin",
+    "drive_has_recycle_bin",
     "WindowsPowerManager",
     "PhysicalDiskResolver",
     "DatabaseManager",

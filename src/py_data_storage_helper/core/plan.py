@@ -12,8 +12,10 @@ class StoragePlan:
         self.operations: List[Dict[str, Any]] = []
         self.batch_rules: List[Dict[str, Any]] = []
 
-    def add_operation(self, op_type: str, src_vol: str, src_path: str, tgt_vol: str, tgt_path: str, size: int) -> None:
-        self.operations.append({
+    def add_operation(self, op_type: str, src_vol: str, src_path: str, tgt_vol: str, tgt_path: str, size: int,
+                      files: Optional[List[str]] = None) -> None:
+        """files: optionale Liste relativer Pfade unterhalb von src_path (z.B. alle Dateien einer Kategorie)."""
+        op: Dict[str, Any] = {
             "op_id": f"op_{len(self.operations)+1:04d}",
             "type": op_type,
             "source_volume": src_vol,
@@ -23,7 +25,18 @@ class StoragePlan:
             "size": size,
             "status": "PENDING",
             "checksum": None
-        })
+        }
+        if files:
+            op["files"] = list(files)
+        self.operations.append(op)
+
+    def replace_with(self, other: 'StoragePlan') -> None:
+        """Übernimmt den Inhalt eines anderen Plans, ohne das Objekt auszutauschen (alle Views teilen sich dieses Objekt)."""
+        self.plan_version = other.plan_version
+        self.created_at = other.created_at
+        self.name = other.name
+        self.operations[:] = list(other.operations)
+        self.batch_rules[:] = list(other.batch_rules)
 
     def to_json(self) -> str:
         data = {

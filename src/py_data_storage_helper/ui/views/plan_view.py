@@ -70,7 +70,8 @@ class PlanManagerView(QWidget):
         self.refresh_table()
 
     def set_plan(self, plan: StoragePlan) -> None:
-        self.current_plan = plan
+        # In-place, damit Queue, Treemap und Kanban denselben Plan sehen.
+        self.current_plan.replace_with(plan)
         self.refresh_table()
 
     def clear_plan(self) -> None:
@@ -92,7 +93,7 @@ class PlanManagerView(QWidget):
             total_bytes += op.get("size", 0)
             self.table.setItem(idx, 0, QTableWidgetItem(op.get("op_id", "")))
             self.table.setItem(idx, 1, QTableWidgetItem(op.get("type", "MOVE")))
-            self.table.setItem(idx, 2, QTableWidgetItem(f"{op.get('source_volume', '')} -> {op.get('source_path', '')}"))
+            self.table.setItem(idx, 2, QTableWidgetItem(f"{op.get('source_volume', '')} -> {op.get('source_path', '') or str(len(op.get('files') or [])) + ' Dateien'}"))
             self.table.setItem(idx, 3, QTableWidgetItem(f"{op.get('target_volume', '')} -> {op.get('target_path', '')}"))
             self.table.setItem(idx, 4, QTableWidgetItem(format_bytes(op.get("size", 0))))
             status_item = QTableWidgetItem(op.get("status", "PENDING"))

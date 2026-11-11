@@ -1,5 +1,5 @@
 from PySide6.QtGui import QColor
-from datetime import datetime
+import datetime
 from PySide6.QtWidgets import QCheckBox
 from PySide6.QtWidgets import QGroupBox
 import os
@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 
 from ...core.utils import to_long_path
 from ...core.database import DatabaseManager
+from ...core.drive_detector import DriveDetector
 
 
 class BatchTransformView(QWidget):
@@ -129,7 +130,14 @@ class BatchTransformView(QWidget):
                 params.append(f"%{search_txt}%")
             query += " ORDER BY f.name ASC LIMIT 500"
             rows = conn.execute(query, params).fetchall()
-            self.loaded_files = [dict(r) for r in rows]
+            # Nur Dateien von aktuell eingebundenen Volumes, mit deren jetzigem Buchstaben.
+            mounted = {d["id"]: d["letter"] for d in DriveDetector.get_mounted_drives()}
+            self.loaded_files = []
+            for r in rows:
+                if r["volume_id"] in mounted:
+                    f = dict(r)
+                    f["volume_letter"] = mounted[r["volume_id"]]
+                    self.loaded_files.append(f)
 
         self.update_preview()
 

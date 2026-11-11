@@ -1,4 +1,4 @@
-from platform import platform
+import platform
 from PySide6.QtWidgets import QGroupBox
 from PySide6.QtWidgets import QFrame
 from PySide6.QtWidgets import QLineEdit
@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, Slot, Signal
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QComboBox, QSplitter, QTableWidget, QTableWidgetItem,
-    QHeaderView, QMessageBox
+    QHeaderView, QMessageBox, QInputDialog
 )
 
 from ...core.utils import format_bytes
@@ -283,16 +283,25 @@ class StorageTreemapView(QWidget):
         tile = self.canvas.selected_tile
         if not tile:
             return
+        targets = [d for d in DriveDetector.get_mounted_drives() if d["id"] != self.current_volume_id]
+        if not targets:
+            QMessageBox.information(self, "Kein Ziel-Laufwerk", "Es ist kein anderes Laufwerk als Ziel eingebunden.")
+            return
+        labels = [f"{d['letter']} [{d['label']}] – frei: {format_bytes(d['free_space'])}" for d in targets]
+        choice, ok = QInputDialog.getItem(self, "Ziel-Laufwerk wählen", "Wohin soll das Element verschoben werden?", labels, 0, False)
+        if not ok:
+            return
+        target = targets[labels.index(choice)]
         self.plan.add_operation(
             op_type="MOVE",
             src_vol=self.current_volume_letter,
             src_path=tile.get("path", tile.get("name")),
-            tgt_vol="E:",
+            tgt_vol=target["letter"],
             tgt_path=f"Konsolidierung/{tile.get('name')}",
             size=tile.get("size", 0)
         )
         QMessageBox.information(
             self, "Plan aktualisiert",
-            f"'{tile.get('name')}' ({format_bytes(tile.get('size', 0))}) wurde in den Ausführungsplan aufgenommen."
+            f"'{tile.get('name')}' ({format_bytes(tile.get('size', 0))}) wurde mit Ziel {target['letter']} in den Ausführungsplan aufgenommen."
         )
 

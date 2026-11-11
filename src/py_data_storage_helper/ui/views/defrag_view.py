@@ -107,7 +107,7 @@ class DefragView(QWidget):
         self.btn_analyze.clicked.connect(lambda: self.start_defrag(analyze_only=True))
         btn_bar.addWidget(self.btn_analyze)
 
-        self.btn_execute = QPushButton("🚀 Vollständige Defragmentierung starten (/U /V)")
+        self.btn_execute = QPushButton("🚀 Laufwerk optimieren (/O /U /V)")
         self.btn_execute.setProperty("class", "action-primary")
         self.btn_execute.clicked.connect(lambda: self.start_defrag(analyze_only=False))
         btn_bar.addWidget(self.btn_execute)

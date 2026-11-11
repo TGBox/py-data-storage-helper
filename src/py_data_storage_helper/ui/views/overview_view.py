@@ -1,4 +1,4 @@
-from datetime import time
+import time
 from PySide6.QtWidgets import QGroupBox
 import os
 from typing import Dict, Any, Optional
@@ -113,7 +113,7 @@ class DriveOverviewView(QWidget):
             btn_scan.clicked.connect(lambda chk=False, d=drv: self.start_indexing(d))
             act_layout.addWidget(btn_scan)
 
-            if drv.get("drive_type") == "Removable" or "C:" not in drv.get("letter", ""):
+            if drv.get("is_external") or str(drv.get("drive_type", "")).startswith("Removable"):
                 btn_eject = QPushButton("⏏ Auswerfen")
                 btn_eject.setProperty("class", "action-secondary")
                 btn_eject.clicked.connect(lambda chk=False, d=drv: self.eject_drive(d))
@@ -123,7 +123,10 @@ class DriveOverviewView(QWidget):
 
     def eject_drive(self, drv: Dict[str, Any]) -> None:
         success, msg = DriveEjector.safely_eject_drive(drv.get("letter", ""))
-        QMessageBox.information(self, "Auswerfen", msg)
+        if success:
+            QMessageBox.information(self, "Auswerfen", msg)
+        else:
+            QMessageBox.warning(self, "Auswerfen fehlgeschlagen", msg)
         self.refresh_drives()
 
     def simulate_usb_connection(self) -> None:

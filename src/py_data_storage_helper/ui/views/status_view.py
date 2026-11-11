@@ -37,8 +37,7 @@ class SystemStatusView(QWidget):
         cards_layout.addWidget(self.card_db)
         layout.addLayout(cards_layout)
 
-        group_diag = QGroupBox("Windows API & Pfadkonfiguration")
-        group_diag.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; font-weight: 600; color: #f8fafc; }")
+        group_diag = QGroupBox("Windows API && Pfadkonfiguration")
         diag_layout = QVBoxLayout(group_diag)
 
         self.txt_info = QTextEdit()

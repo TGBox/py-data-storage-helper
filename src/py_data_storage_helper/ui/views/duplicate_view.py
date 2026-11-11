@@ -103,7 +103,7 @@ class DuplicateFinderView(QWidget):
         auto_sel_bar.addWidget(btn_clear_sel)
         auto_sel_bar.addStretch()
 
-        self.btn_dry_run = QPushButton("Bereinigung simulieren & ausführen...")
+        self.btn_dry_run = QPushButton("Bereinigung simulieren && ausführen...")
         self.btn_dry_run.setProperty("class", "action-danger")
         self.btn_dry_run.clicked.connect(self.open_simulation)
         auto_sel_bar.addWidget(self.btn_dry_run)
@@ -112,6 +112,7 @@ class DuplicateFinderView(QWidget):
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Auswahl / Gruppe", "Größe", "Redundanz", "Änderungsdatum", "Pfad"])
         self.tree.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.tree.header().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.tree.header().setSectionResizeMode(4, QHeaderView.Stretch)
         layout.addWidget(self.tree)
 

@@ -71,7 +71,8 @@ class KanbanColumnWidget(QFrame):
         self.assigned_clusters: List[Dict[str, Any]] = []
         self.setAcceptDrops(True)
         self.setMinimumWidth(260)
-        self.setStyleSheet("QFrame { background-color: #0f172a; border: 1px solid #334155; border-radius: 10px; }")
+        self.setObjectName("KanbanColumn")
+        self.setStyleSheet("QFrame#KanbanColumn { background-color: #0f172a; border: 1px solid #334155; border-radius: 10px; }")
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 12, 10, 12)
@@ -80,27 +81,28 @@ class KanbanColumnWidget(QFrame):
         header = QHBoxLayout()
         drv_name = "Quell-Pool (Nicht zugewiesen)" if is_pool else f"{drive_data['letter']} {drive_data['label']}"
         lbl_name = QLabel(drv_name)
-        lbl_name.setStyleSheet("font-weight: 700; font-size: 14px; color: #f8fafc;")
+        lbl_name.setStyleSheet("font-weight: 700; font-size: 14px; color: #f8fafc; border: none;")
         header.addWidget(lbl_name)
         header.addStretch()
 
         type_badge = QLabel("POOL" if is_pool else ("SSD" if drive_data.get("is_ssd") else "HDD"))
-        type_badge.setStyleSheet("background-color: #2563eb; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px;")
+        type_badge.setStyleSheet("background-color: #2563eb; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; border: none;")
         header.addWidget(type_badge)
         layout.addLayout(header)
 
         if not is_pool:
             self.lbl_space = QLabel()
-            self.lbl_space.setStyleSheet("font-size: 11px; color: #94a3b8;")
+            self.lbl_space.setStyleSheet("font-size: 11px; color: #94a3b8; border: none;")
             self.bar_space = QProgressBar()
             self.bar_space.setFixedHeight(8)
+            self.bar_space.setTextVisible(False)
             layout.addWidget(self.lbl_space)
             layout.addWidget(self.bar_space)
             self.update_space_display()
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("background: transparent; border: none;")
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
         self.card_container = QWidget()
         self.card_container.setStyleSheet("background: transparent;")
         self.card_layout = QVBoxLayout(self.card_container)
@@ -146,13 +148,13 @@ class KanbanColumnWidget(QFrame):
     def dragEnterEvent(self, event) -> None:
         if event.mimeData().hasText():
             event.acceptProposedAction()
-            self.setStyleSheet("QFrame { background-color: #1e293b; border: 2px dashed #38bdf8; border-radius: 10px; }")
+            self.setStyleSheet("QFrame#KanbanColumn { background-color: #1e293b; border: 2px dashed #38bdf8; border-radius: 10px; }")
 
     def dragLeaveEvent(self, event) -> None:
-        self.setStyleSheet("QFrame { background-color: #0f172a; border: 1px solid #334155; border-radius: 10px; }")
+        self.setStyleSheet("QFrame#KanbanColumn { background-color: #0f172a; border: 1px solid #334155; border-radius: 10px; }")
 
     def dropEvent(self, event) -> None:
-        self.setStyleSheet("QFrame { background-color: #0f172a; border: 1px solid #334155; border-radius: 10px; }")
+        self.setStyleSheet("QFrame#KanbanColumn { background-color: #0f172a; border: 1px solid #334155; border-radius: 10px; }")
         try:
             cluster_data = json.loads(event.mimeData().text())
             target_id = None if self.is_pool else self.drive_data["id"]

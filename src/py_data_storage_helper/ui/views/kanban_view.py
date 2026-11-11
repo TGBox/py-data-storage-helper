@@ -27,7 +27,7 @@ class PlanningKanbanView(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("background: transparent; border: none;")
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
         self.board_widget = QWidget()
         self.board_layout = QHBoxLayout(self.board_widget)
         self.board_layout.setContentsMargins(10, 10, 10, 10)
@@ -38,8 +38,10 @@ class PlanningKanbanView(QWidget):
     def refresh_columns(self, group_by: str = "category") -> None:
         while self.board_layout.count() > 0:
             item = self.board_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            w = item.widget()
+            if w:
+                w.setParent(None)
+                w.deleteLater()
         self.columns.clear()
 
         pool_dummy = {"id": "POOL", "label": "Pool", "letter": "", "total_space": 0, "free_space": 0, "is_ssd": 0}
@@ -55,10 +57,15 @@ class PlanningKanbanView(QWidget):
             self.board_layout.addWidget(col)
             self.columns[vol["id"]] = col
 
+        self.board_layout.addStretch()
+
         for vol in volumes:
             clusters = self.db.get_volume_aggregates(vol["id"], group_by=group_by)
             for cl in clusters:
                 pool_col.add_card(cl)
+
+        self.board_layout.activate()
+        self.board_widget.adjustSize()
 
     def on_cluster_assigned(self, cluster: Dict[str, Any], target_drive_id: Optional[str]) -> None:
         if not target_drive_id:

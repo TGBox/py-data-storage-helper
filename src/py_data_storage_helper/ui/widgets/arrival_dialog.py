@@ -22,7 +22,8 @@ class DriveArrivalDialog(QDialog):
         layout.setSpacing(14)
 
         header_card = QFrame()
-        header_card.setStyleSheet("background-color: #1e293b; border-radius: 8px; padding: 14px;")
+        header_card.setObjectName("HeaderCard")
+        header_card.setStyleSheet("QFrame#HeaderCard { background-color: #1e293b; border-radius: 8px; padding: 14px; }")
         h_layout = QVBoxLayout(header_card)
 
         lbl_title = QLabel(f"💽 Neues Laufwerk gefunden: <b>{drive_data['letter']} [{drive_data['label']}]</b>")
@@ -46,12 +47,11 @@ class DriveArrivalDialog(QDialog):
         layout.addWidget(header_card)
 
         group_actions = QGroupBox("Auswahl der Folgeaktion:")
-        group_actions.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; font-weight: 600; color: #f8fafc; }")
         a_layout = QVBoxLayout(group_actions)
         a_layout.setSpacing(8)
 
         self.btn_grp = QButtonGroup(self)
-        self.rb_full = QRadioButton("Vollständig indizieren (Dateien & Ordnerhierarchie katalogisieren)")
+        self.rb_full = QRadioButton("Vollständig indizieren (Dateien && Ordnerhierarchie katalogisieren)")
         self.rb_full.setChecked(True)
         self.rb_plan = QRadioButton("Direkt in die visuelle Speicherplanung einbinden")
         self.rb_ignore = QRadioButton("Vorläufig ignorieren (keine automatische Aktion)")

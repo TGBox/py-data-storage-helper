@@ -299,6 +299,7 @@ class DuplicateFinderView(QWidget):
         deleted_count = 0
         fail_count = 0
         freed_bytes = 0
+        deleted_ids: List[int] = []
         for f in selected_files:
             target_path = f["abs_path"]
             letter = mounted.get(f.get("volume_id"))
@@ -319,9 +320,13 @@ class DuplicateFinderView(QWidget):
             if success:
                 deleted_count += 1
                 freed_bytes += f.get("size", 0)
+                if f.get("id") is not None:
+                    deleted_ids.append(f["id"])
                 self.db.log_operation("DELETE", target_path, size=f.get("size", 0))
             else:
                 fail_count += 1
+
+        self.db.delete_file_records(deleted_ids)  # Index nachführen
 
         QMessageBox.information(
             self, "Bereinigung fertig",

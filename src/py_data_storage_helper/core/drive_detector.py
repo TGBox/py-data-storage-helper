@@ -9,10 +9,14 @@ from ..constants import (
     DRIVE_REMOTE,
 )
 from .utils import categorize_extension
+from .windows import query_storage_device, EXTERNAL_BUS_TYPES, BUS_TYPE_NVME
 
 
 class DriveDetector:
     """Discovers physical and logical Windows storage drives, capacity and filesystem details."""
+
+    # Hardware-Abfrage je Volume nur einmal (der DeviceWatcher fragt die Laufwerke alle 1,5 s ab).
+    _storage_cache: Dict[Any, Optional[Dict[str, Any]]] = {}
 
     @staticmethod
     def categorize_extension(ext: str) -> str:
@@ -125,7 +129,24 @@ class DriveDetector:
                 ctypes.byref(total_free)
             )
 
-            is_ssd = 1 if (drive_type_val == DRIVE_FIXED and ("C:" in drive_path.upper() or "SSD" in vol_label.upper() or "NVME" in vol_label.upper())) else 0
+            storage = None
+            if drive_type_val in (DRIVE_FIXED, DRIVE_REMOVABLE):
+                cache_key = (vol_id, drive_path.upper())
+                if cache_key not in cls._storage_cache:
+                    cls._storage_cache[cache_key] = query_storage_device(drive_path)
+                storage = cls._storage_cache[cache_key]
+
+            if storage and storage["seek_penalty"] is not None:
+                is_ssd = 0 if storage["seek_penalty"] else 1
+            elif storage and storage["bus_type"] == BUS_TYPE_NVME:
+                is_ssd = 1
+            else:
+                # Gerät meldet nichts Verwertbares (häufig bei USB-Gehäusen): alte Heuristik als Rückfall.
+                is_ssd = 1 if (drive_type_val == DRIVE_FIXED and ("C:" in drive_path.upper() or "SSD" in vol_label.upper() or "NVME" in vol_label.upper())) else 0
+
+            is_external = drive_type_val == DRIVE_REMOVABLE or bool(
+                storage and (storage["removable"] or storage["bus_type"] in EXTERNAL_BUS_TYPES)
+            )
 
             return {
                 "id": vol_id,
@@ -135,6 +156,7 @@ class DriveDetector:
                 "free_space": int(free_bytes.value),
                 "file_system": fs_name,
                 "is_ssd": is_ssd,
+                "is_external": is_external,
                 "drive_type": type_label,
                 "smart_status": "OK"
             }

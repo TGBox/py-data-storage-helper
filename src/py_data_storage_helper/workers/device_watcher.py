@@ -51,5 +51,8 @@ class DeviceWatcher(QThread):
                     self.sig_drive_removed.emit(r)
             except Exception:
                 pass
-            time.sleep(self.poll_interval)
+            waited = 0.0
+            while self._running and waited < self.poll_interval:
+                time.sleep(0.1)  # kurze Schritte, damit stop() sofort greift
+                waited += 0.1
 

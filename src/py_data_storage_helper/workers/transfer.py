@@ -111,6 +111,7 @@ class SpindleAwareTransferCoordinator(QThread):
         if result.journal:
             try:
                 self.db.log_operations_batch(result.journal)
+                self.db.apply_transfers_to_index(result.journal)
             except Exception as ex:
                 self.sig_log.emit(f"Journal konnte nicht geschrieben werden: {ex}")
 

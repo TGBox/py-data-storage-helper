@@ -81,6 +81,7 @@ class DatabaseManager:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_size ON files(size);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_ext ON files(extension);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_cat ON files(category);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_vol_path ON files(volume_id, path COLLATE NOCASE);")
             conn.commit()
 
     def upsert_volume(self, vol_data: Dict[str, Any]) -> None:
@@ -201,10 +202,6 @@ class DatabaseManager:
                     if target_dir:
                         os.makedirs(to_long_path(target_dir), exist_ok=True)
                     os.rename(to_long_path(tgt), to_long_path(src))
-
-                    conn.execute("UPDATE files SET name = ?, path = ? WHERE path = ?", (
-                        os.path.basename(src), src, tgt
-                    ))
                 elif op_type == "DELETE":
                     return False, "Gelöschte Dateien müssen über den Windows-Papierkorb wiederhergestellt werden."
                 else:
@@ -212,6 +209,10 @@ class DatabaseManager:
 
                 conn.execute("UPDATE operation_history SET reverted = 1 WHERE id = ?", (op_id,))
                 conn.commit()
+                try:
+                    self.apply_transfers_to_index([("MOVE", tgt, src, 0, "")])
+                except Exception:
+                    pass  # Index ist nur ein Cache, die Datei liegt bereits wieder am alten Ort
                 return True, f"Operation #{op_id} ({op_type}) erfolgreich rückgängig gemacht."
             except Exception as ex:
                 return False, f"Dateisystem-Fehler beim Rollback: {ex}"
@@ -224,6 +225,70 @@ class DatabaseManager:
             """, (op_type, source, target, size, checksum))
             conn.commit()
             return cursor.lastrowid
+
+    def delete_file_records(self, file_ids: List[int]) -> None:
+        if not file_ids:
+            return
+        with self.get_connection() as conn:
+            conn.executemany("DELETE FROM files WHERE id = ?", [(i,) for i in file_ids])
+            conn.commit()
+
+    @staticmethod
+    def _locate_in_volumes(abs_path: str, drives: List[Dict[str, Any]]) -> Optional[Tuple[str, str]]:
+        """Zerlegt einen absoluten Pfad in (volume_id, relativer Pfad) anhand der eingebundenen Laufwerke."""
+        norm = os.path.normpath(abs_path)
+        norm_cmp = os.path.normcase(norm)
+        best: Optional[Tuple[str, str]] = None
+        best_len = -1
+        for d in drives:
+            root = os.path.normpath(d.get("letter") or "")
+            if not root:
+                continue
+            root_cmp = os.path.normcase(root)
+            at_boundary = root_cmp.endswith(os.sep) or len(norm_cmp) == len(root_cmp) or norm_cmp[len(root_cmp):len(root_cmp) + 1] == os.sep
+            if norm_cmp.startswith(root_cmp) and at_boundary and len(root_cmp) > best_len:
+                best = (d["id"], norm[len(root):].lstrip("\\/"))
+                best_len = len(root_cmp)
+        return best
+
+    def apply_transfers_to_index(self, journal: List[Tuple], drives: Optional[List[Dict[str, Any]]] = None) -> None:
+        """Führt den Datei-Index nach: journal = (operation_type, source_abs, target_abs, size, checksum)."""
+        if not journal:
+            return
+        if drives is None:
+            drives = DriveDetector.get_mounted_drives()
+        with self.get_connection() as conn:
+            for op_type, src, tgt, *_ in journal:
+                s = self._locate_in_volumes(src, drives)
+                if not s:
+                    continue
+                t = self._locate_in_volumes(tgt, drives) if tgt else None
+                try:
+                    if t:
+                        # ein evtl. überschriebenes Ziel aus dem Index nehmen
+                        conn.execute("DELETE FROM files WHERE volume_id = ? AND path = ? COLLATE NOCASE", t)
+                        name = os.path.basename(t[1])
+                        ext = os.path.splitext(name)[1].lower()
+                    if op_type == "MOVE" and t:
+                        conn.execute(
+                            "UPDATE files SET volume_id = ?, path = ?, name = ?, extension = ? "
+                            "WHERE volume_id = ? AND path = ? COLLATE NOCASE",
+                            (t[0], t[1], name, ext, s[0], s[1])
+                        )
+                    elif op_type == "MOVE":
+                        conn.execute("DELETE FROM files WHERE volume_id = ? AND path = ? COLLATE NOCASE", s)
+                    elif op_type == "COPY" and t:
+                        conn.execute(
+                            "INSERT INTO files (volume_id, path, name, extension, size, mtime, ctime, attributes, category) "
+                            "SELECT ?, ?, ?, ?, size, mtime, ctime, attributes, category FROM files "
+                            "WHERE volume_id = ? AND path = ? COLLATE NOCASE LIMIT 1",
+                            (t[0], t[1], name, ext, s[0], s[1])
+                        )
+                except sqlite3.IntegrityError:
+                    # Ziel-Volume ist der Datenbank unbekannt: Quelle bei MOVE trotzdem austragen
+                    if op_type == "MOVE":
+                        conn.execute("DELETE FROM files WHERE volume_id = ? AND path = ? COLLATE NOCASE", s)
+            conn.commit()
 
     def log_operations_batch(self, records: List[Tuple]) -> None:
         """records: (operation_type, source_path, target_path, file_size, checksum)"""

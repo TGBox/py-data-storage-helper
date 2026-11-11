@@ -41,6 +41,96 @@ if platform.system() == "Windows":
         ]
 
 
+class STORAGE_PROPERTY_QUERY(ctypes.Structure):
+    _fields_ = [
+        ("PropertyId", ctypes.c_uint32),
+        ("QueryType", ctypes.c_uint32),
+        ("AdditionalParameters", ctypes.c_ubyte * 1),
+    ]
+
+
+class STORAGE_DEVICE_DESCRIPTOR(ctypes.Structure):
+    _fields_ = [
+        ("Version", ctypes.c_uint32),
+        ("Size", ctypes.c_uint32),
+        ("DeviceType", ctypes.c_ubyte),
+        ("DeviceTypeModifier", ctypes.c_ubyte),
+        ("RemovableMedia", ctypes.c_ubyte),
+        ("CommandQueueing", ctypes.c_ubyte),
+        ("VendorIdOffset", ctypes.c_uint32),
+        ("ProductIdOffset", ctypes.c_uint32),
+        ("ProductRevisionOffset", ctypes.c_uint32),
+        ("SerialNumberOffset", ctypes.c_uint32),
+        ("BusType", ctypes.c_uint32),
+        ("RawPropertiesLength", ctypes.c_uint32),
+    ]
+
+
+class DEVICE_SEEK_PENALTY_DESCRIPTOR(ctypes.Structure):
+    _fields_ = [
+        ("Version", ctypes.c_uint32),
+        ("Size", ctypes.c_uint32),
+        ("IncursSeekPenalty", ctypes.c_ubyte),
+    ]
+
+
+BUS_TYPE_1394 = 4
+BUS_TYPE_USB = 7
+BUS_TYPE_SD = 12
+BUS_TYPE_MMC = 13
+BUS_TYPE_NVME = 17
+EXTERNAL_BUS_TYPES = frozenset({BUS_TYPE_1394, BUS_TYPE_USB, BUS_TYPE_SD, BUS_TYPE_MMC})
+
+
+def query_storage_device(drive_letter: str) -> Optional[Dict[str, Any]]:
+    """Fragt Bus-Typ, Wechselmedium und Seek-Penalty (HDD ja / SSD nein) direkt beim Laufwerk ab.
+
+    Liefert {"bus_type", "removable", "seek_penalty"}; einzelne Werte sind None, wenn das Gerät sie nicht meldet.
+    None insgesamt, wenn das Laufwerk nicht abgefragt werden kann.
+    """
+    if platform.system() != "Windows":
+        return None
+    clean = drive_letter.strip("\\").upper()
+    try:
+        IOCTL_STORAGE_QUERY_PROPERTY = 0x002D1400
+        STORAGE_DEVICE_PROPERTY = 0
+        STORAGE_DEVICE_SEEK_PENALTY_PROPERTY = 7
+        FILE_SHARE_READ = 1
+        FILE_SHARE_WRITE = 2
+        OPEN_EXISTING = 3
+
+        kernel32 = ctypes.windll.kernel32
+        h_vol = kernel32.CreateFileW(f"\\\\.\\{clean}", 0, FILE_SHARE_READ | FILE_SHARE_WRITE, None, OPEN_EXISTING, 0, None)
+        if not h_vol or h_vol == -1:
+            return None
+        try:
+            info: Dict[str, Any] = {"bus_type": None, "removable": None, "seek_penalty": None}
+            bytes_ret = ctypes.c_uint32(0)
+
+            query = STORAGE_PROPERTY_QUERY(STORAGE_DEVICE_PROPERTY, 0)
+            buf = ctypes.create_string_buffer(1024)
+            if kernel32.DeviceIoControl(
+                h_vol, IOCTL_STORAGE_QUERY_PROPERTY, ctypes.byref(query), ctypes.sizeof(query),
+                buf, len(buf), ctypes.byref(bytes_ret), None
+            ):
+                desc = STORAGE_DEVICE_DESCRIPTOR.from_buffer(buf)
+                info["bus_type"] = int(desc.BusType)
+                info["removable"] = bool(desc.RemovableMedia)
+
+            query = STORAGE_PROPERTY_QUERY(STORAGE_DEVICE_SEEK_PENALTY_PROPERTY, 0)
+            seek = DEVICE_SEEK_PENALTY_DESCRIPTOR()
+            if kernel32.DeviceIoControl(
+                h_vol, IOCTL_STORAGE_QUERY_PROPERTY, ctypes.byref(query), ctypes.sizeof(query),
+                ctypes.byref(seek), ctypes.sizeof(seek), ctypes.byref(bytes_ret), None
+            ):
+                info["seek_penalty"] = bool(seek.IncursSeekPenalty)
+            return info
+        finally:
+            kernel32.CloseHandle(h_vol)
+    except Exception:
+        return None
+
+
 class PhysicalDiskResolver:
     """Maps logical Windows volume letters to physical spindle drive numbers (e.g., PhysicalDrive0)."""
     _cache: Dict[str, Tuple[str, str, bool]] = {}

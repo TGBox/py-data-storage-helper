@@ -50,6 +50,7 @@ class CatalogExplorerView(QWidget):
         self.table.setHorizontalHeaderLabels(["Name", "Größe", "Kategorie", "Änderungsdatum", "Relativer Pfad"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)

@@ -51,7 +51,6 @@ class BatchTransformView(QWidget):
         layout.addLayout(filter_bar)
 
         rules_box = QGroupBox("Transformations-Regeln")
-        rules_box.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px; font-weight: 600; color: #f8fafc; }")
         r_layout = QVBoxLayout(rules_box)
 
         r_row1 = QHBoxLayout()

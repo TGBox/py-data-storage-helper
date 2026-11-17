@@ -50,16 +50,17 @@ class DriveOverviewView(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
         self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setDefaultSectionSize(58)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         layout.addWidget(self.table)
 
         self.progress_group = QGroupBox("Aktive Indizierung")
-        self.progress_group.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; font-weight: 600; color: #f8fafc; }")
         prog_layout = QVBoxLayout(self.progress_group)
         self.lbl_prog_status = QLabel("Bereit für Scan.")
         self.lbl_prog_status.setStyleSheet("color: #94a3b8;")
         self.prog_bar = QProgressBar()
-        self.prog_bar.setRange(0, 0)
+        self.prog_bar.setRange(0, 100)
+        self.prog_bar.setValue(0)
 
         btn_box = QHBoxLayout()
         self.btn_cancel_scan = QPushButton("Indizierung abbrechen")
@@ -92,12 +93,15 @@ class DriveOverviewView(QWidget):
 
             space_widget = QWidget()
             s_layout = QVBoxLayout(space_widget)
-            s_layout.setContentsMargins(4, 4, 4, 4)
+            s_layout.setContentsMargins(8, 6, 8, 6)
+            s_layout.setSpacing(4)
             s_bar = QProgressBar()
             s_bar.setRange(0, 100)
             s_bar.setValue(pct)
+            s_bar.setFixedHeight(18)
             s_lbl = QLabel(f"{format_bytes(used)} / {format_bytes(total)} ({pct} %)")
             s_lbl.setStyleSheet("font-size: 11px; color: #94a3b8;")
+            s_lbl.setMinimumHeight(18)
             s_layout.addWidget(s_bar)
             s_layout.addWidget(s_lbl)
             self.table.setCellWidget(row, 4, space_widget)
@@ -105,21 +109,26 @@ class DriveOverviewView(QWidget):
 
             action_widget = QWidget()
             act_layout = QHBoxLayout(action_widget)
-            act_layout.setContentsMargins(4, 2, 4, 2)
+            act_layout.setContentsMargins(6, 8, 6, 8)
             act_layout.setSpacing(6)
 
             btn_scan = QPushButton("Indizieren")
             btn_scan.setProperty("class", "action-primary")
+            btn_scan.setMinimumHeight(34)
+            btn_scan.setMinimumWidth(96)
             btn_scan.clicked.connect(lambda chk=False, d=drv: self.start_indexing(d))
             act_layout.addWidget(btn_scan)
 
             if drv.get("is_external") or str(drv.get("drive_type", "")).startswith("Removable"):
                 btn_eject = QPushButton("⏏ Auswerfen")
                 btn_eject.setProperty("class", "action-secondary")
+                btn_eject.setMinimumHeight(34)
+                btn_eject.setMinimumWidth(110)
                 btn_eject.clicked.connect(lambda chk=False, d=drv: self.eject_drive(d))
                 act_layout.addWidget(btn_eject)
 
             self.table.setCellWidget(row, 6, action_widget)
+            self.table.setRowHeight(row, 58)
 
     def eject_drive(self, drv: Dict[str, Any]) -> None:
         success, msg = DriveEjector.safely_eject_drive(drv.get("letter", ""))

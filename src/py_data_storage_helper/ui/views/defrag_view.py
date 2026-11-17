@@ -38,7 +38,8 @@ class DefragView(QWidget):
         layout.addLayout(header_layout)
 
         self.safety_banner = QFrame()
-        self.safety_banner.setStyleSheet("background-color: #1e293b; border-radius: 8px; padding: 12px;")
+        self.safety_banner.setObjectName("SafetyBanner")
+        self.safety_banner.setStyleSheet("QFrame#SafetyBanner { background-color: #1e293b; border-radius: 8px; padding: 12px; }")
         sb_layout = QVBoxLayout(self.safety_banner)
 
         select_row = QHBoxLayout()
@@ -54,7 +55,6 @@ class DefragView(QWidget):
         layout.addWidget(self.safety_banner)
 
         map_box = QGroupBox("🗺️ Physische Cluster-Belegungskarte (Sektor-Zustand)")
-        map_box.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-weight: 600; color: #f8fafc; }")
         mb_layout = QVBoxLayout(map_box)
         mb_layout.setContentsMargins(8, 8, 8, 8)
         mb_layout.setSpacing(8)
@@ -80,7 +80,6 @@ class DefragView(QWidget):
         layout.addWidget(map_box)
 
         prog_box = QGroupBox("Optimierungs-Fortschritt")
-        prog_box.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-weight: 600; color: #f8fafc; }")
         pb_layout = QVBoxLayout(prog_box)
         pb_layout.setContentsMargins(8, 8, 8, 8)
 
@@ -89,7 +88,7 @@ class DefragView(QWidget):
         self.prog_defrag = QProgressBar()
         self.prog_defrag.setRange(0, 100)
         self.prog_defrag.setValue(0)
-        self.prog_defrag.setFixedHeight(12)
+        self.prog_defrag.setFixedHeight(18)
         pb_layout.addWidget(self.lbl_defrag_status)
         pb_layout.addWidget(self.prog_defrag)
         layout.addWidget(prog_box)

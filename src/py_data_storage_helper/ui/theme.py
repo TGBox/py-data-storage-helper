@@ -8,12 +8,14 @@ QWidget { font-family: 'Segoe UI', system-ui, sans-serif; color: #f8fafc; font-s
 QPushButton.nav-btn { background-color: transparent; color: #94a3b8; text-align: left; padding: 10px 14px; border-radius: 8px; font-size: 13px; border: none; }
 QPushButton.nav-btn:hover { background-color: #334155; color: #f8fafc; }
 QPushButton.nav-btn:checked { background-color: #2563eb; color: #ffffff; font-weight: 600; }
-QPushButton.action-primary { background-color: #2563eb; color: #ffffff; font-weight: 600; border-radius: 6px; padding: 8px 16px; border: none; }
+QPushButton.action-primary { background-color: #2563eb; color: #ffffff; font-weight: 600; border-radius: 6px; padding: 5px 16px; border: none; min-height: 20px; }
 QPushButton.action-primary:hover { background-color: #1d4ed8; }
-QPushButton.action-secondary { background-color: #334155; color: #f8fafc; font-weight: 500; border-radius: 6px; padding: 8px 14px; border: 1px solid #475569; }
+QPushButton.action-secondary { background-color: #334155; color: #f8fafc; font-weight: 500; border-radius: 6px; padding: 5px 14px; border: 1px solid #475569; min-height: 20px; }
 QPushButton.action-secondary:hover { background-color: #475569; }
-QPushButton.action-danger { background-color: #ef4444; color: #ffffff; font-weight: 600; border-radius: 6px; padding: 8px 14px; border: none; }
+QPushButton.action-danger { background-color: #ef4444; color: #ffffff; font-weight: 600; border-radius: 6px; padding: 5px 14px; border: none; min-height: 20px; }
 QPushButton.action-danger:hover { background-color: #dc2626; }
+QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; margin-top: 10px; padding: 16px 14px 14px 14px; font-weight: 600; color: #f8fafc; }
+QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 12px; padding: 0 6px; color: #f8fafc; background-color: #1e293b; border-radius: 4px; }
 QLineEdit, QComboBox { background-color: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 6px 12px; color: #f8fafc; }
 QTableWidget, QTreeWidget { background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; gridline-color: #1e293b; color: #f8fafc; selection-background-color: #2563eb; }
 QHeaderView::section { background-color: #1e293b; color: #94a3b8; padding: 8px; font-weight: 600; border: none; border-bottom: 1px solid #334155; }

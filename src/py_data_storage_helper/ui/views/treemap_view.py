@@ -74,7 +74,8 @@ class StorageTreemapView(QWidget):
         layout.addLayout(nav_bar)
 
         legend_frame = QFrame()
-        legend_frame.setStyleSheet("background-color: #1e293b; border-radius: 6px; padding: 6px;")
+        legend_frame.setObjectName("LegendFrame")
+        legend_frame.setStyleSheet("QFrame#LegendFrame { background-color: #1e293b; border-radius: 6px; padding: 6px; }")
         l_layout = QHBoxLayout(legend_frame)
         l_layout.setContentsMargins(10, 4, 10, 4)
         l_layout.setSpacing(16)
@@ -110,7 +111,6 @@ class StorageTreemapView(QWidget):
         inspector_layout.setSpacing(10)
 
         self.card_details = QGroupBox("🔍 Kachel-Inspektor")
-        self.card_details.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; font-weight: 600; color: #f8fafc; }")
         cd_layout = QVBoxLayout(self.card_details)
         cd_layout.setSpacing(6)
 
@@ -140,7 +140,6 @@ class StorageTreemapView(QWidget):
         inspector_layout.addWidget(self.card_details)
 
         top_box = QGroupBox("🏆 Größte Elemente in dieser Ebene")
-        top_box.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-weight: 600; color: #f8fafc; }")
         tb_layout = QVBoxLayout(top_box)
         self.table_top = QTableWidget()
         self.table_top.setColumnCount(3)

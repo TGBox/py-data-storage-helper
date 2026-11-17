@@ -22,7 +22,8 @@ class DryRunSimulationDialog(QDialog):
         layout.setSpacing(14)
 
         header_frame = QFrame()
-        header_frame.setStyleSheet("background-color: #1e293b; border-radius: 8px; padding: 14px;")
+        header_frame.setObjectName("HeaderFrame")
+        header_frame.setStyleSheet("QFrame#HeaderFrame { background-color: #1e293b; border-radius: 8px; padding: 14px; }")
         h_layout = QVBoxLayout(header_frame)
 
         title = QLabel("🛡️ Bereinigungs-Simulation & Sicherheitsprüfung")

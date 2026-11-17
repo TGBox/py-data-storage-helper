@@ -42,8 +42,7 @@ class TransferQueueView(QWidget):
         header_bar.addWidget(self.btn_smart_check)
         layout.addLayout(header_bar)
 
-        opt_box = QGroupBox("Spindle-Aware Concurrency & Resilienz-Einstellungen")
-        opt_box.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; font-weight: 600; color: #f8fafc; }")
+        opt_box = QGroupBox("Spindle-Aware Concurrency && Resilienz-Einstellungen")
         opt_layout = QVBoxLayout(opt_box)
         opt_layout.setSpacing(8)
 
@@ -84,7 +83,8 @@ class TransferQueueView(QWidget):
         layout.addWidget(opt_box)
 
         self.telemetry_frame = QFrame()
-        self.telemetry_frame.setStyleSheet("background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px;")
+        self.telemetry_frame.setObjectName("TelemetryFrame")
+        self.telemetry_frame.setStyleSheet("QFrame#TelemetryFrame { background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; }")
         self.telemetry_layout = QHBoxLayout(self.telemetry_frame)
         self.telemetry_layout.setContentsMargins(8, 4, 8, 4)
         self.lbl_spindle_status = QLabel("📊 Physische Spindeln: Bereit.")
@@ -102,7 +102,8 @@ class TransferQueueView(QWidget):
         layout.addLayout(metrics_layout)
 
         prog_frame = QFrame()
-        prog_frame.setStyleSheet("background-color: #1e293b; border-radius: 8px; padding: 12px;")
+        prog_frame.setObjectName("ProgFrame")
+        prog_frame.setStyleSheet("QFrame#ProgFrame { background-color: #1e293b; border-radius: 8px; padding: 12px; }")
         p_layout = QVBoxLayout(prog_frame)
         p_layout.setSpacing(6)
 
@@ -116,7 +117,6 @@ class TransferQueueView(QWidget):
         layout.addWidget(prog_frame)
 
         active_group = QGroupBox("⚡ Aktive parallele Datenströme (Spindle Channels)")
-        active_group.setStyleSheet("QGroupBox { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-weight: 600; color: #f8fafc; }")
         ag_layout = QVBoxLayout(active_group)
         ag_layout.setContentsMargins(8, 8, 8, 8)
 

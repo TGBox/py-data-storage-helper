@@ -14,7 +14,7 @@ class AdminBanner(QFrame):
         layout.setContentsMargins(16, 10, 16, 10)
         self.status_icon = QLabel()
         self.status_text = QLabel()
-        self.action_btn = QPushButton("Plan sichern & als Admin neustarten")
+        self.action_btn = QPushButton("Plan sichern && als Admin neustarten")
         self.action_btn.clicked.connect(self.sig_request_elevation.emit)
 
         layout.addWidget(self.status_icon)
@@ -23,13 +23,14 @@ class AdminBanner(QFrame):
         self.update_status(is_admin)
 
     def update_status(self, is_admin: bool) -> None:
+        self.setObjectName("AdminBanner")
         if is_admin:
-            self.setStyleSheet("QFrame { background-color: #064e3b; border-bottom: 1px solid #059669; } QLabel { color: #a7f3d0; font-weight: 600; font-size: 13px; }")
+            self.setStyleSheet("QFrame#AdminBanner { background-color: #064e3b; border-bottom: 1px solid #059669; } QLabel { color: #a7f3d0; font-weight: 600; font-size: 13px; background: transparent; border: none; }")
             self.status_icon.setText("🛡️")
             self.status_text.setText("Administrator-Modus: Vollzugriff auf Hardware und Defragmentierung aktiv.")
             self.action_btn.setVisible(False)
         else:
-            self.setStyleSheet("QFrame { background-color: #78350f; border-bottom: 1px solid #d97706; } QLabel { color: #fef3c7; font-size: 13px; font-weight: 500; } QPushButton { background-color: #d97706; color: #fff; border-radius: 6px; padding: 6px 14px; font-weight: 600; border: none; }")
+            self.setStyleSheet("QFrame#AdminBanner { background-color: #78350f; border-bottom: 1px solid #d97706; } QLabel { color: #fef3c7; font-size: 13px; font-weight: 500; background: transparent; border: none; } QPushButton { background-color: #d97706; color: #fff; border-radius: 6px; padding: 6px 14px; font-weight: 600; border: none; }")
             self.status_icon.setText("⚠️")
             self.status_text.setText("Eingeschränkter Modus: Nur Planung und Analyse aktiv. Ausführung erfordert Adminrechte.")
             self.action_btn.setVisible(True)
@@ -39,7 +40,8 @@ class AdminBanner(QFrame):
 class StatCard(QFrame):
     def __init__(self, title: str, value: str = "0", subtitle: str = ""):
         super().__init__()
-        self.setStyleSheet("QFrame { background-color: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px; }")
+        self.setObjectName("StatCard")
+        self.setStyleSheet("QFrame#StatCard { background-color: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px; } QLabel { background: transparent; border: none; padding: 0; }")
         layout = QVBoxLayout(self)
         layout.setSpacing(4)
         self.lbl_title = QLabel(title)

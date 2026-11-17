@@ -69,16 +69,16 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(logo_lbl)
 
         self.nav_buttons = []
-        self.btn_nav_drives = self.create_nav_button("💽 Laufwerke & Indexer", 0)
+        self.btn_nav_drives = self.create_nav_button("💽 Laufwerke && Indexer", 0)
         self.btn_nav_catalog = self.create_nav_button("🔍 Datei-Katalog", 1)
         self.btn_nav_treemap = self.create_nav_button("🗺️ Speicher-Treemap", 2)
-        self.btn_nav_duplicates = self.create_nav_button("👥 Duplikate & Redundanzen", 3)
+        self.btn_nav_duplicates = self.create_nav_button("👥 Duplikate && Redundanzen", 3)
         self.btn_nav_batch = self.create_nav_button("🏷️ Batch-Transformation", 4)
         self.btn_nav_visual = self.create_nav_button("🎨 Visuelle Planung", 5)
         self.btn_nav_plan = self.create_nav_button("📋 Plan-Manager (.stplan)", 6)
-        self.btn_nav_queue = self.create_nav_button("🚀 Transfer-Queue & Ausführung", 7)
+        self.btn_nav_queue = self.create_nav_button("🚀 Transfer-Queue && Ausführung", 7)
         self.btn_nav_defrag = self.create_nav_button("🧹 Defragmentierung (HDD)", 8)
-        self.btn_nav_journal = self.create_nav_button("🔄 Undo & Historie", 9)
+        self.btn_nav_journal = self.create_nav_button("🔄 Undo && Historie", 9)
         self.btn_nav_system = self.create_nav_button("⚙️ System-Status", 10)
 
         for btn in [self.btn_nav_drives, self.btn_nav_catalog, self.btn_nav_treemap,
